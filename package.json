@@ -23,7 +23,15 @@
       "dummy"
     ],
     "resources": {
-      "media": []
+      "media": [
+        {
+          "type":"font",
+          "name":"FONT_IBM_BOLD_35",
+          "file":"fonts/IBMPlexMono-bold.ttf",
+          "compatibility":"2.7",
+          "characterRegex":"[0-9:APM ]"
+        }
+      ]
     }
   }
 }
