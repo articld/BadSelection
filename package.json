@@ -13,7 +13,6 @@
     "targetPlatforms": [
       "aplite",
       "basalt",
-      "chalk",
       "diorite"
     ],
     "watchapp": {
@@ -30,6 +29,20 @@
           "file":"fonts/IBMPlexMono-bold.ttf",
           "compatibility":"2.7",
           "characterRegex":"[0-9:APM ]"
+        },
+        {
+          "type":"font",
+          "name":"FONT_IBM_BOLD_21",
+          "file":"fonts/IBMPlexMono-bold.ttf",
+          "compatibility":"2.7",
+          "characterRegex":"[A-Z]"
+        },
+        {
+          "type":"font",
+          "name":"FONT_IBM_REGULAR_21",
+          "file":"fonts/IBMPlexMono-regular.ttf",
+          "compatibility":"2.7",
+          "characterRegex":"[a-z]"
         }
       ]
     }
