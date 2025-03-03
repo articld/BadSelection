@@ -33,9 +33,6 @@ static void text_grid(Layer *time_layer){
 
     s_textgrid_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_IBM_REGULAR_21));
 
-    //L'unico modo per cui questo funzioni, la variabile deve essere inizializzata con static
-    //Il che è un problema enorme se voglio usare rand. Quindi il come posso risolvere questo problema sarà interessante
-
     static char str[_NUM_ELEM_][2] = {{'a', '\0'}};
 
     for(int i=0; i<_NUM_ELEM_; i++){
