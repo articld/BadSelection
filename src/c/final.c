@@ -33,17 +33,24 @@ static void text_grid(Layer *time_layer){
 
     s_textgrid_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_IBM_REGULAR_21));
 
+    //L'unico modo per cui questo funzioni, la variabile deve essere inizializzata con static
+    //Il che è un problema enorme se voglio usare rand. Quindi il come posso risolvere questo problema sarà interessante
+
+    static char str[_NUM_ELEM_][2] = {{'a', '\0'}};
+
     for(int i=0; i<_NUM_ELEM_; i++){
-            x_coord = 2 + (i % 10) * 14;
-        if(i) y_coord = (i % 10)? y_coord : y_coord + 28;
+        x_coord = 2 + (i % 10) * 14;
+        if(i) y_coord = (i % 10)? y_coord : y_coord + 27;
+
+        str[i][0] = rand() % 26 + 97;
 
         s_textgrid_layer[i] = text_layer_create(GRect(x_coord, y_coord, 13, 25));
 
         text_layer_set_font(s_textgrid_layer[i], s_textgrid_font);
         text_layer_set_background_color(s_textgrid_layer[i], GColorClear);
-        text_layer_set_text_color(s_textgrid_layer[i], GColorLightGray);
+        text_layer_set_text_color(s_textgrid_layer[i], GColorDarkGray);
         text_layer_set_text_alignment(s_textgrid_layer[i], GTextAlignmentLeft);
-        text_layer_set_text(s_textgrid_layer[i], "a");
+        text_layer_set_text(s_textgrid_layer[i], str[i]);
 
         layer_insert_below_sibling(text_layer_get_layer(s_textgrid_layer[i]), time_layer); 
     }
@@ -51,19 +58,15 @@ static void text_grid(Layer *time_layer){
 
 static void main_window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
-    GRect bounds = layer_get_bounds(window_layer);
-
     window_set_background_color(s_window, GColorClear);
 
-
-    //the font size is probably right +-1
     s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_IBM_BOLD_35));
 
-    s_time_layer = text_layer_create(GRect(0, 61, 112, 46));
+    s_time_layer = text_layer_create(GRect(0, 59, 112, 48));
 
     text_layer_set_font(s_time_layer, s_time_font);
-    text_layer_set_text_color(s_time_layer, GColorBlack);
-    text_layer_set_background_color(s_time_layer, GColorBlue);
+    text_layer_set_text_color(s_time_layer, GColorWhite);
+    text_layer_set_background_color(s_time_layer, GColorDukeBlue);
     text_layer_set_text_alignment(s_time_layer, GTextAlignmentLeft);
     
     layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
