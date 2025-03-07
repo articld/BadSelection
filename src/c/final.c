@@ -34,12 +34,17 @@ static void shuffle_grid_text(){
     }
 }
 
+/* FIXME: the animation looks right, when it works. 
+   Unfortunately I have a bunch of issues regarding memory leaks and some other weird glitch that i'll need to fix
+*/
+
+/*
 static void animate_grid(){
     const int array_length = _NUM_ELEM_ * 2;
     Animation **arr = (Animation**)malloc(array_length * sizeof(Animation*));
 
     const int duration_ms = 300;
-    int delay_ms = 50;
+    int delay_ms = 0;
 
     for(int i=0; i< array_length; i++){
         if(i % 2 == 0){
@@ -51,7 +56,8 @@ static void animate_grid(){
 
             PropertyAnimation *prop_anim = property_animation_create_layer_frame(text_layer_get_layer(s_textgrid_elements[j]), &start, &finish);
             Animation *anim = property_animation_get_animation(prop_anim);
-            delay_ms += i * 75;
+            if(!layer_get_hidden(text_layer_get_layer(s_textgrid_elements[j])))
+                delay_ms += 75;
 
             animation_set_curve(anim, AnimationCurveEaseOut);
             animation_set_delay(anim, delay_ms);
@@ -64,7 +70,7 @@ static void animate_grid(){
             int j = i - 1;
             Animation *anim_1 = animation_clone(arr[j]);
             animation_set_reverse(anim_1, true);
-            animation_set_delay(anim_1, delay_ms + duration_ms);
+            animation_set_delay(anim_1, delay_ms + duration_ms + 120);
 
             arr[i] = anim_1;
         }
@@ -75,8 +81,9 @@ static void animate_grid(){
 
     free(arr);
 }
+*/
 
-static void update_time(){
+static void update_time(bool first_update){
     time_t temp = time(NULL);
     struct tm *tick_time = localtime(&temp);
 
@@ -84,11 +91,17 @@ static void update_time(){
     strftime(s_buffer, sizeof(s_buffer), clock_is_24h_style() ? "%H:%M" : "%I:%M", tick_time);
 
     text_layer_set_text(s_time_layer, s_buffer);
-    animate_grid();
+
+    //eventually this line will go to the grid animation, whenever I'm done implementing it
+    if(!first_update) shuffle_grid_text();
+    //animate_grid();
 }
 
 
-/* TODO
+/* TODO: put the current date inside the textgrid
+   Hopefully that won't involve rewriting the whole thing.
+   Surely it won't, right?
+   
 static void update_date(){
     time_t temp = time(NULL);
     struct tm *tick_time = localtime(&temp);
@@ -117,7 +130,7 @@ static void update_date(){
 */
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
-    update_time();
+    update_time(false);
 }
 
 static void create_text_grid(Layer *target){
@@ -125,12 +138,12 @@ static void create_text_grid(Layer *target){
     int y_coord = 0;
     s_textgrid_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_IBM_REGULAR_21));
 
-
     for(int i=0; i<_NUM_ELEM_; i++){
         x_coord = 2 + (i % 10) * 14;
         if(i) y_coord = (i % 10)? y_coord : y_coord + 27;
 
         s_textgrid_elements[i] = text_layer_create(GRect(x_coord, y_coord, 13, 25));
+        if(y_coord>55 && y_coord <107 && x_coord< 111) layer_set_hidden(text_layer_get_layer(s_textgrid_elements[i]), true);
 
         text_layer_set_font(s_textgrid_elements[i], s_textgrid_font);
         text_layer_set_background_color(s_textgrid_elements[i], GColorClear);
@@ -156,7 +169,7 @@ static void main_window_load(Window *window) {
     text_layer_set_text_color(s_time_layer, _TIME_COLOR_ );
     text_layer_set_background_color(s_time_layer, _ACCENT_BG_COLOR_ );
     text_layer_set_text_alignment(s_time_layer, GTextAlignmentLeft);
-    layer_insert_above_sibling(text_layer_get_layer(s_time_layer), text_layer_get_layer(s_textgrid_elements[59]));
+    layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
 }
 
 static void main_window_unload(Window *window) {
@@ -182,7 +195,7 @@ static void init(void) {
     const bool animated = true;
     window_stack_push(s_window, animated);
 
-    update_time();
+    update_time(true);
     //update_date();
 }
 

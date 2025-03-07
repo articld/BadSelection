@@ -1,12 +1,12 @@
 {
-  "name": "final",
-  "author": "MakeAwesomeHappen",
-  "version": "1.0.0",
-  "keywords": ["pebble-app"],
-  "private": true,
+  "name": "Bad Selection",
+  "author": "Articld",
+  "version": "0.1.0",
+  "keywords": ["pebble-watchface"],
+  "private": false,
   "dependencies": {},
   "pebble": {
-    "displayName": "final",
+    "displayName": "Bad Selection",
     "uuid": "77e68bfb-2c15-4652-8e9a-fd658da49f8f",
     "sdkVersion": "3",
     "enableMultiJS": true,
