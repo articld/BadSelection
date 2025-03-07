@@ -9,48 +9,55 @@ static TextLayer *s_textgrid_elements[_NUM_ELEM_];
 static GFont s_time_font, s_textgrid_font;
 //static GFont s_date_font;
 
-static void anim_started_handler(Animation *animation, void *context) {
-    return;
-}
+static void shuffle_grid_text(){
+    static char s_str[_NUM_ELEM_][2] = {{'a', '\0'}};
 
-static void anim_stopped_handler(Animation *animation, bool finished, void *context) {
-
+    for(int i = 0; i<_NUM_ELEM_; i++){
+        s_str[i][0] = rand() % 26 + 97;
+        text_layer_set_text(s_textgrid_elements[i], s_str[i]);
+    }
 }
 
 static void animate_grid(){
-    for(int i=0; i<_NUM_ELEM_; i++){
-        GRect start = layer_get_frame(text_layer_get_layer(s_textgrid_elements[i])); 
-        GRect finish = layer_get_frame(text_layer_get_layer(s_textgrid_elements[i]));
-        
-        finish.origin.x = 0;
-        finish.origin.y = 0;
-        finish.size.h = 0;
+    const int array_length = _NUM_ELEM_ * 2;
+    Animation **arr = (Animation**)malloc(array_length * sizeof(Animation*));
 
-        PropertyAnimation *prop_anim = property_animation_create_layer_frame(text_layer_get_layer(s_textgrid_elements[i]), &start, &finish);
-        Animation *anim = property_animation_get_animation(prop_anim);
+    const int duration_ms = 500;
+    int delay_ms = 500;
 
-        animation_set_handlers(anim, (AnimationHandlers) {
-          .started = anim_started_handler,
-          .stopped = anim_stopped_handler
-        }, NULL);
+    for(int i=0; i< array_length; i++){
+        if(i % 2 == 0){
+            int j = i / 2;
 
-        int delay_ms = 1000 + i * 150;
-        const int duration_ms = 500;
+            GRect start = layer_get_frame(text_layer_get_layer(s_textgrid_elements[j])); 
+            GRect finish = layer_get_frame(text_layer_get_layer(s_textgrid_elements[j]));
+            finish.size.h = 0;
 
-        animation_set_curve(anim, AnimationCurveEaseOut);
-        animation_set_delay(anim, delay_ms);
-        animation_set_duration(anim, duration_ms);
+            PropertyAnimation *prop_anim = property_animation_create_layer_frame(text_layer_get_layer(s_textgrid_elements[j]), &start, &finish);
+            Animation *anim = property_animation_get_animation(prop_anim);
+            delay_ms += i * 75;
 
-        animation_schedule(anim);
+            animation_set_curve(anim, AnimationCurveEaseOut);
+            animation_set_delay(anim, delay_ms);
+            animation_set_duration(anim, duration_ms);
 
-        /*
-        bool result = animation_set_reverse(anim, true);
-        if(result) APP_LOG(APP_LOG_LEVEL_DEBUG, "reversed");
-        animation_set_delay(anim, delay_ms + duration_ms);
+            arr[i] = anim;
+        }
 
-        animation_schedule(anim);
-        */
+        else{
+            int j = i - 1;
+            Animation *anim_1 = animation_clone(arr[j]);
+            animation_set_reverse(anim_1, true);
+            animation_set_delay(anim_1, delay_ms + duration_ms);
+
+            arr[i] = anim_1;
+        }
     }
+
+    Animation *spawn = animation_spawn_create_from_array(arr , array_length);
+    animation_schedule(spawn);
+
+    free(arr);
 }
 
 static void update_time(){
@@ -61,6 +68,7 @@ static void update_time(){
     strftime(s_buffer, sizeof(s_buffer), clock_is_24h_style() ? "%H:%M" : "%I:%M", tick_time);
 
     text_layer_set_text(s_time_layer, s_buffer);
+    animate_grid();
 }
 
 
@@ -97,19 +105,14 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
 }
 
 static void create_text_grid(Layer *target){
-    srand(time(NULL));
     int x_coord = 0;
     int y_coord = 0;
-
     s_textgrid_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_IBM_REGULAR_21));
 
-    static char s_str[_NUM_ELEM_][2] = {{'a', '\0'}};
 
     for(int i=0; i<_NUM_ELEM_; i++){
         x_coord = 2 + (i % 10) * 14;
         if(i) y_coord = (i % 10)? y_coord : y_coord + 27;
-
-        s_str[i][0] = rand() % 26 + 97;
 
         s_textgrid_elements[i] = text_layer_create(GRect(x_coord, y_coord, 13, 25));
 
@@ -117,10 +120,10 @@ static void create_text_grid(Layer *target){
         text_layer_set_background_color(s_textgrid_elements[i], GColorClear);
         text_layer_set_text_color(s_textgrid_elements[i], GColorLightGray);
         text_layer_set_text_alignment(s_textgrid_elements[i], GTextAlignmentLeft);
-        text_layer_set_text(s_textgrid_elements[i], s_str[i]);
-
         layer_add_child(target, text_layer_get_layer(s_textgrid_elements[i])); 
     }
+
+    shuffle_grid_text();
 }
 
 static void main_window_load(Window *window) {
@@ -151,6 +154,7 @@ static void main_window_unload(Window *window) {
 }
 
 static void init(void) {
+    srand(time(NULL));
     tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
 
     s_window = window_create();
@@ -164,7 +168,6 @@ static void init(void) {
 
     update_time();
     //update_date();
-    animate_grid();
 }
 
 static void deinit(void) {
