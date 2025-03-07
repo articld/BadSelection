@@ -1,6 +1,22 @@
 #include <pebble.h>
 #define _NUM_ELEM_ 60
 
+#if defined (PBL_COLOR)
+
+#define _BG_COLOR_ GColorBlack
+#define _ACCENT_BG_COLOR_ GColorDukeBlue
+#define _TIME_COLOR_ GColorWhite
+#define _TEXTGRID_COLOR_ GColorDarkGray
+
+#else
+
+#define _BG_COLOR_ GColorBlack
+#define _ACCENT_BG_COLOR_ GColorWhite
+#define _TIME_COLOR_ GColorBlack
+#define _TEXTGRID_COLOR_ GColorWhite
+
+#endif
+
 static Window *s_window;
 
 static TextLayer *s_time_layer;
@@ -22,8 +38,8 @@ static void animate_grid(){
     const int array_length = _NUM_ELEM_ * 2;
     Animation **arr = (Animation**)malloc(array_length * sizeof(Animation*));
 
-    const int duration_ms = 500;
-    int delay_ms = 500;
+    const int duration_ms = 300;
+    int delay_ms = 50;
 
     for(int i=0; i< array_length; i++){
         if(i % 2 == 0){
@@ -118,7 +134,7 @@ static void create_text_grid(Layer *target){
 
         text_layer_set_font(s_textgrid_elements[i], s_textgrid_font);
         text_layer_set_background_color(s_textgrid_elements[i], GColorClear);
-        text_layer_set_text_color(s_textgrid_elements[i], GColorLightGray);
+        text_layer_set_text_color(s_textgrid_elements[i], _TEXTGRID_COLOR_ );
         text_layer_set_text_alignment(s_textgrid_elements[i], GTextAlignmentLeft);
         layer_add_child(target, text_layer_get_layer(s_textgrid_elements[i])); 
     }
@@ -128,7 +144,7 @@ static void create_text_grid(Layer *target){
 
 static void main_window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
-    window_set_background_color(s_window, GColorClear);
+    window_set_background_color(s_window, _BG_COLOR_ );
 
     create_text_grid(window_layer);
 
@@ -137,8 +153,8 @@ static void main_window_load(Window *window) {
     s_time_layer = text_layer_create(GRect(0, 59, 112, 48));
 
     text_layer_set_font(s_time_layer, s_time_font);
-    text_layer_set_text_color(s_time_layer, GColorWhite);
-    text_layer_set_background_color(s_time_layer, GColorDukeBlue);
+    text_layer_set_text_color(s_time_layer, _TIME_COLOR_ );
+    text_layer_set_background_color(s_time_layer, _ACCENT_BG_COLOR_ );
     text_layer_set_text_alignment(s_time_layer, GTextAlignmentLeft);
     layer_insert_above_sibling(text_layer_get_layer(s_time_layer), text_layer_get_layer(s_textgrid_elements[59]));
 }
