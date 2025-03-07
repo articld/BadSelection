@@ -4,9 +4,54 @@
 static Window *s_window;
 
 static TextLayer *s_time_layer;
-static TextLayer *s_textgrid_layer[_NUM_ELEM_];
+static TextLayer *s_textgrid_elements[_NUM_ELEM_];
 
-static GFont s_time_font, s_textgrid_font, s_date_font;
+static GFont s_time_font, s_textgrid_font;
+//static GFont s_date_font;
+
+static void anim_started_handler(Animation *animation, void *context) {
+    return;
+}
+
+static void anim_stopped_handler(Animation *animation, bool finished, void *context) {
+
+}
+
+static void animate_grid(){
+    for(int i=0; i<_NUM_ELEM_; i++){
+        GRect start = layer_get_frame(text_layer_get_layer(s_textgrid_elements[i])); 
+        GRect finish = layer_get_frame(text_layer_get_layer(s_textgrid_elements[i]));
+        
+        finish.origin.x = 0;
+        finish.origin.y = 0;
+        finish.size.h = 0;
+
+        PropertyAnimation *prop_anim = property_animation_create_layer_frame(text_layer_get_layer(s_textgrid_elements[i]), &start, &finish);
+        Animation *anim = property_animation_get_animation(prop_anim);
+
+        animation_set_handlers(anim, (AnimationHandlers) {
+          .started = anim_started_handler,
+          .stopped = anim_stopped_handler
+        }, NULL);
+
+        int delay_ms = 1000 + i * 150;
+        const int duration_ms = 500;
+
+        animation_set_curve(anim, AnimationCurveEaseOut);
+        animation_set_delay(anim, delay_ms);
+        animation_set_duration(anim, duration_ms);
+
+        animation_schedule(anim);
+
+        /*
+        bool result = animation_set_reverse(anim, true);
+        if(result) APP_LOG(APP_LOG_LEVEL_DEBUG, "reversed");
+        animation_set_delay(anim, delay_ms + duration_ms);
+
+        animation_schedule(anim);
+        */
+    }
+}
 
 static void update_time(){
     time_t temp = time(NULL);
@@ -16,7 +61,6 @@ static void update_time(){
     strftime(s_buffer, sizeof(s_buffer), clock_is_24h_style() ? "%H:%M" : "%I:%M", tick_time);
 
     text_layer_set_text(s_time_layer, s_buffer);
-
 }
 
 
@@ -41,9 +85,9 @@ static void update_date(){
     for(int i = 0; i < 3; i++){
         s_textgrid_buffer[i][0] = s_buffer[i];
 
-        text_layer_set_font(s_textgrid_layer[i], s_date_font);
-        text_layer_set_text_color(s_textgrid_layer[i], GColorDarkGray);
-        text_layer_set_text(s_textgrid_layer[i], s_textgrid_buffer[i]);
+        text_layer_set_font(s_textgrid_elements[i], s_date_font);
+        text_layer_set_text_color(s_textgrid_elements[i], GColorDarkGray);
+        text_layer_set_text(s_textgrid_elements[i], s_textgrid_buffer[i]);
     }
 }
 */
@@ -52,9 +96,8 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
     update_time();
 }
 
-static void text_grid(Layer *time_layer){
+static void create_text_grid(Layer *target){
     srand(time(NULL));
-
     int x_coord = 0;
     int y_coord = 0;
 
@@ -68,21 +111,23 @@ static void text_grid(Layer *time_layer){
 
         s_str[i][0] = rand() % 26 + 97;
 
-        s_textgrid_layer[i] = text_layer_create(GRect(x_coord, y_coord, 13, 25));
+        s_textgrid_elements[i] = text_layer_create(GRect(x_coord, y_coord, 13, 25));
 
-        text_layer_set_font(s_textgrid_layer[i], s_textgrid_font);
-        text_layer_set_background_color(s_textgrid_layer[i], GColorClear);
-        text_layer_set_text_color(s_textgrid_layer[i], GColorLightGray);
-        text_layer_set_text_alignment(s_textgrid_layer[i], GTextAlignmentLeft);
-        text_layer_set_text(s_textgrid_layer[i], s_str[i]);
+        text_layer_set_font(s_textgrid_elements[i], s_textgrid_font);
+        text_layer_set_background_color(s_textgrid_elements[i], GColorClear);
+        text_layer_set_text_color(s_textgrid_elements[i], GColorLightGray);
+        text_layer_set_text_alignment(s_textgrid_elements[i], GTextAlignmentLeft);
+        text_layer_set_text(s_textgrid_elements[i], s_str[i]);
 
-        layer_insert_below_sibling(text_layer_get_layer(s_textgrid_layer[i]), time_layer); 
+        layer_add_child(target, text_layer_get_layer(s_textgrid_elements[i])); 
     }
 }
 
 static void main_window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     window_set_background_color(s_window, GColorClear);
+
+    create_text_grid(window_layer);
 
     s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_IBM_BOLD_35));
 
@@ -92,15 +137,12 @@ static void main_window_load(Window *window) {
     text_layer_set_text_color(s_time_layer, GColorWhite);
     text_layer_set_background_color(s_time_layer, GColorDukeBlue);
     text_layer_set_text_alignment(s_time_layer, GTextAlignmentLeft);
-    
-    layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
-
-    text_grid(text_layer_get_layer(s_time_layer));
+    layer_insert_above_sibling(text_layer_get_layer(s_time_layer), text_layer_get_layer(s_textgrid_elements[59]));
 }
 
 static void main_window_unload(Window *window) {
     for(int i=0; i<_NUM_ELEM_; i++) 
-        text_layer_destroy(s_textgrid_layer[i]);
+        text_layer_destroy(s_textgrid_elements[i]);
 
     text_layer_destroy(s_time_layer);
     fonts_unload_custom_font(s_time_font);
@@ -122,6 +164,7 @@ static void init(void) {
 
     update_time();
     //update_date();
+    animate_grid();
 }
 
 static void deinit(void) {
