@@ -17,10 +17,13 @@
 
 #endif
 
+
 static Window *s_window;
 
 static TextLayer *s_time_layer;
 static TextLayer *s_textgrid_elements[_NUM_ELEM_];
+
+static int s_animation_counter = 0;
 
 static GFont s_time_font, s_textgrid_font;
 //static GFont s_date_font;
@@ -34,11 +37,27 @@ static void shuffle_grid_text(){
     }
 }
 
-/* FIXME: the animation looks right, when it works. 
-   Unfortunately I have a bunch of issues regarding memory leaks and some other weird glitch that i'll need to fix
-*/
+static void anim_started_handler(Animation *animation, void *context) {
+    return;
+}
 
-/*
+static void anim_stopped_handler(Animation *animation, bool finished, void *context) {
+    static char s_str[_NUM_ELEM_][2] = {{'a', '\0'}};
+    s_str[s_animation_counter][0] = rand() % 26 + 97;
+
+    text_layer_set_text(context, s_str[s_animation_counter]);
+
+    s_animation_counter = (s_animation_counter + 1) % 60;
+}
+
+static void anim_1_started_handler(Animation *animation, void *context) {
+    return;
+}
+
+static void anim_1_stopped_handler(Animation *animation, bool finished, void *context) {
+    return;
+}
+
 static void animate_grid(){
     const int array_length = _NUM_ELEM_ * 2;
     Animation **arr = (Animation**)malloc(array_length * sizeof(Animation*));
@@ -52,6 +71,7 @@ static void animate_grid(){
 
             GRect start = layer_get_frame(text_layer_get_layer(s_textgrid_elements[j])); 
             GRect finish = layer_get_frame(text_layer_get_layer(s_textgrid_elements[j]));
+            finish.origin.y = finish.origin.y + finish.size.h;
             finish.size.h = 0;
 
             PropertyAnimation *prop_anim = property_animation_create_layer_frame(text_layer_get_layer(s_textgrid_elements[j]), &start, &finish);
@@ -59,9 +79,14 @@ static void animate_grid(){
             if(!layer_get_hidden(text_layer_get_layer(s_textgrid_elements[j])))
                 delay_ms += 75;
 
-            animation_set_curve(anim, AnimationCurveEaseOut);
+            animation_set_curve(anim, AnimationCurveEaseIn);
             animation_set_delay(anim, delay_ms);
             animation_set_duration(anim, duration_ms);
+
+            animation_set_handlers(anim, (AnimationHandlers){
+                .started = anim_started_handler,
+                .stopped = anim_stopped_handler
+            }, s_textgrid_elements[j]);
 
             arr[i] = anim;
         }
@@ -71,6 +96,10 @@ static void animate_grid(){
             Animation *anim_1 = animation_clone(arr[j]);
             animation_set_reverse(anim_1, true);
             animation_set_delay(anim_1, delay_ms + duration_ms + 120);
+            animation_set_handlers(anim_1, (AnimationHandlers){
+                .started = anim_1_started_handler,
+                .stopped = anim_1_stopped_handler
+            }, NULL);
 
             arr[i] = anim_1;
         }
@@ -81,7 +110,6 @@ static void animate_grid(){
 
     free(arr);
 }
-*/
 
 static void update_time(bool first_update){
     time_t temp = time(NULL);
@@ -93,8 +121,8 @@ static void update_time(bool first_update){
     text_layer_set_text(s_time_layer, s_buffer);
 
     //eventually this line will go to the grid animation, whenever I'm done implementing it
-    if(!first_update) shuffle_grid_text();
-    //animate_grid();
+    //if(!first_update) shuffle_grid_text();
+    if(!first_update) animate_grid();
 }
 
 
