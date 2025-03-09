@@ -16,7 +16,6 @@ Current TODOs:
 
 - Clean up the code.
 - Swap the font out. Unfortunately, this font looks pretty bad without antialiasing.
-- Build a good looking animation. Currently I wrote a very buggy one that works only with the textgrid, but I wanted to animte the minute/hour digit too
 - Embed the current date in the text grid
 - Add customization options.
 
