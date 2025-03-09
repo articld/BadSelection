@@ -185,7 +185,7 @@ static void animate_time(TextLayer *target, int additional_delay){
     arr[0] = anim;
     arr[1] = anim_1;
 
-    Animation *spawn = animation_sequence_create_from_array(arr, 2);
+    Animation *spawn = animation_spawn_create_from_array(arr, 2);
     animation_schedule(spawn);
     free(arr);
 }
