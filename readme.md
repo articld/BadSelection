@@ -1,6 +1,8 @@
 # Bad Selection [^1]
 ![Basalt](./basalt.png) ![Diorite](./diorite.png)
 
+![Basalt](./basalt.gif) ![Diorite](./diorite.gif)
+
 My entry for [Rebble Hackathon#002](https://rebble.io/hackathon-002/)
 
 ---
