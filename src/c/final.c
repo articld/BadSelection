@@ -124,37 +124,101 @@ static void animate_grid(){
 
 }
 
+//HOUR AND MINUTE ANIMATIONS
+//-----------------------------------------------------------------------------
+
+static void time_anim_started_handler(Animation *animation, void *context){
+    return;
+}
+
+static void time_anim_stopped_handler(Animation *animation, bool finished, void *context){
+    TextLayer *target = (TextLayer *) context;
+
+    if(target == s_TimeLayer.minutes){
+        time_t temp = time(NULL);
+        struct tm *tick_time = localtime(&temp);
+
+        static char s_m_buffer[4];
+        strftime(s_m_buffer, sizeof(s_m_buffer), "%M", tick_time);
+        text_layer_set_text(target, s_m_buffer); 
+    }
+
+    else{
+        time_t temp = time(NULL);
+        struct tm *tick_time = localtime(&temp);
+
+        static char s_h_buffer[4];
+        strftime(s_h_buffer, sizeof(s_h_buffer), clock_is_24h_style() ? "%H" : "%I", tick_time);
+        text_layer_set_text(target, s_h_buffer); 
+    } 
+}
+
+static void animate_time(TextLayer *target, int additional_delay){
+    Animation **arr = (Animation**)malloc(2 * sizeof(Animation*));
+
+    const int duration_ms = 300;
+    const int delay_ms = 1500 + additional_delay;
+
+    Layer *time_layer = text_layer_get_layer(target);
+
+    GRect start = layer_get_frame(time_layer);
+    GRect finish = layer_get_frame(time_layer);
+    finish.origin.y = finish.origin.y + finish.size.h;
+    finish.size.h = 0;
+
+    PropertyAnimation *prop_anim = property_animation_create_layer_frame(time_layer, &start, &finish);
+    Animation *anim = property_animation_get_animation(prop_anim);
+
+    animation_set_curve(anim, AnimationCurveEaseIn);
+    animation_set_delay(anim, delay_ms);
+    animation_set_duration(anim, duration_ms);
+
+    Animation *anim_1 = animation_clone(anim);
+    animation_set_reverse(anim_1, true);
+    animation_set_delay(anim_1, delay_ms + duration_ms + 120);
+
+    animation_set_handlers(anim, (AnimationHandlers){
+        .started = time_anim_started_handler,
+        .stopped = time_anim_stopped_handler
+    }, target);
+
+    arr[0] = anim;
+    arr[1] = anim_1;
+
+    Animation *spawn = animation_sequence_create_from_array(arr, 2);
+    animation_schedule(spawn);
+    free(arr);
+}
 
 //TIMEKEEPING
 //-----------------------------------------------------------------------------
-
-static void update_hour(bool first_update){
+static void update_time(){
     time_t temp = time(NULL);
     struct tm *tick_time = localtime(&temp);
 
     static char s_h_buffer[4];
-    strftime(s_h_buffer, sizeof(s_h_buffer), clock_is_24h_style() ? "%H" : "%I", tick_time);
+    static char s_m_buffer[4];
 
-    if(strcmp(s_h_buffer, text_layer_get_text(s_TimeLayer.hours))){
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "jfdlkf");
-        //if(!first_update) animate_hour();
-        text_layer_set_text(s_TimeLayer.hours , s_h_buffer);
-    }
+    strftime(s_h_buffer, sizeof(s_h_buffer), "%H", tick_time);
+    strftime(s_m_buffer, sizeof(s_m_buffer), "%M", tick_time);
+
+    text_layer_set_text(s_TimeLayer.hours, s_h_buffer);
+    text_layer_set_text(s_TimeLayer.minutes, s_m_buffer);
 }
 
-static void update_minute(bool first_update){
+static void update_with_anim(bool first_update){
+    if(!first_update) animate_grid();
+    animate_time(s_TimeLayer.minutes, 100);
+
     time_t temp = time(NULL);
     struct tm *tick_time = localtime(&temp);
 
-    static char s_m_buffer[4];
-    strftime(s_m_buffer, sizeof(s_m_buffer), "%M", tick_time);
-
-    text_layer_set_text(s_TimeLayer.minutes, s_m_buffer);
-    //if(!first_update) animate_minute();
-    if(!first_update) animate_grid();
-
-    update_hour(first_update);
-
+    static char s_h_buffer[4];
+    strftime(s_h_buffer, sizeof(s_h_buffer), "%H", tick_time);
+    
+    if(strcmp(s_h_buffer, text_layer_get_text(s_TimeLayer.hours))){
+        animate_time(s_TimeLayer.hours, 0);
+    }
 }
 
 /* TODO: put the current date inside the textgrid
@@ -189,7 +253,7 @@ static void update_date(){
 */
 
 static void tick_minute_handler(struct tm *tick_time, TimeUnits units_changed){
-    update_minute(false);
+    update_with_anim(false);
 }
 
 //LAYER CREATION
@@ -298,7 +362,7 @@ static void init(void) {
     const bool animated = true;
     window_stack_push(s_window, animated);
 
-    update_minute(true);
+    update_time();
     //update_date();
 }
 
