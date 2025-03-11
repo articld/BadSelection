@@ -6,6 +6,10 @@
 My entry for [Rebble Hackathon#002](https://rebble.io/hackathon-002/)
 
 ---
+
+The font Feature Mono is made by ![Sia Vrublevskaya](https://www.behance.net/siiiiia#)
+
+---
 **WARNING** the code inside this repo is a bit of a mess. 
 
 With this watchface, I wanted to recreate the look of the old mechanical flipboards. Unfortunately, due to lack of IRL time and poor planning from my side, this project is very much underbaked. The watchface in its current form works, but it's fairly featureless.
@@ -15,7 +19,6 @@ Well, I guess if I was a good salesman I could say that this watchface is design
 Current TODOs:
 
 - Clean up the code.
-- Swap the font out. Unfortunately, this font looks pretty bad without antialiasing.
 - Embed the current date in the text grid
 - Add customization options.
 

@@ -261,10 +261,10 @@ static void tick_minute_handler(struct tm *tick_time, TimeUnits units_changed){
 static void create_text_grid(Layer *target){
     int x_coord = 0;
     int y_coord = 0;
-    s_textgrid_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_IBM_REGULAR_21));
+    s_textgrid_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FEATURE_MONO_REGULAR_20));
 
     for(int i=0; i<_NUM_ELEM_; i++){
-        x_coord = 2 + (i % 10) * 14;
+        x_coord = 3 + (i % 10) * 14;
         if(i) y_coord = (i % 10)? y_coord : y_coord + 27;
 
         s_textgrid_elements[i] = text_layer_create(GRect(x_coord, y_coord, 13, 25));
@@ -289,12 +289,12 @@ static void draw_timebox_canvas(Layer *layer, GContext *ctx){
 }
 
 static void create_time(Layer *target){
-    s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_IBM_BOLD_35));
+    s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FEATURE_MONO_BLACK_35));
 
     //TODO, find a procedural way to put the right coordinates. 
-    s_TimeLayer.hours = text_layer_create(GRect(0, 59, 44, 48));
-    s_TimeLayer.separator =text_layer_create(GRect(44, 59, 24, 48));
-    s_TimeLayer.minutes = text_layer_create(GRect(68, 59, 44, 48));
+    s_TimeLayer.hours = text_layer_create(GRect(3, 59, 44, 48));
+    s_TimeLayer.separator =text_layer_create(GRect(47, 59, 24, 48));
+    s_TimeLayer.minutes = text_layer_create(GRect(65, 59, 44, 48));
 
     GRect time_box = GRect(0, 59, 112, 48);
 
