@@ -157,7 +157,7 @@ static void animate_time(TextLayer *target, int additional_delay){
     Animation **arr = (Animation**)malloc(2 * sizeof(Animation*));
 
     const int duration_ms = 300;
-    const int delay_ms = 1500 + additional_delay;
+    const int delay_ms = (75 * _NUM_ELEM_ / 2) + additional_delay;
 
     Layer *time_layer = text_layer_get_layer(target);
 
@@ -290,20 +290,25 @@ static void draw_timebox_canvas(Layer *layer, GContext *ctx){
 
 static void create_time(Layer *target){
     s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FEATURE_MONO_BLACK_35));
-
-    //TODO, find a procedural way to put the right coordinates. 
-    s_TimeLayer.hours = text_layer_create(GRect(3, 59, 44, 48));
-    s_TimeLayer.separator =text_layer_create(GRect(47, 59, 24, 48));
-    s_TimeLayer.minutes = text_layer_create(GRect(65, 59, 44, 48));
-
     GRect time_box = GRect(0, 59, 112, 48);
+
+    const int time_x = time_box.origin.x + 3;
+
+    const int time_h = 48;
+    const int time_y = time_box.origin.y;
+
+    const int time_w = 44;
+    const int time_w_separator = 24;
+
+    s_TimeLayer.hours = text_layer_create(GRect(time_x, time_y, time_w, time_h));
+    s_TimeLayer.separator =text_layer_create(GRect(time_x + time_w, time_y, time_w_separator, time_h));
+    s_TimeLayer.minutes = text_layer_create(GRect(time_x + time_w + time_w_separator - 5, time_y, time_w, time_h));
 
     s_TimeLayer_bg = layer_create(time_box);
     layer_set_update_proc(s_TimeLayer_bg, draw_timebox_canvas);
     layer_add_child(target, s_TimeLayer_bg);
     layer_mark_dirty(s_TimeLayer_bg);
 
-    text_layer_set_text(s_TimeLayer.hours, "aa");
     text_layer_set_font(s_TimeLayer.hours, s_time_font);
     text_layer_set_text_color(s_TimeLayer.hours, _TIME_COLOR_ );
     text_layer_set_background_color(s_TimeLayer.hours, GColorClear);
