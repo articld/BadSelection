@@ -6,6 +6,8 @@
 
 int s_animation_counter = 0;
 
+TextLayer *time_hours_pointer = NULL;
+
 //TEXTGRID ANIMATION
 //-----------------------------------------------------------------------------
 
@@ -99,19 +101,35 @@ void time_anim_stopped_handler(Animation *animation, bool finished, void *contex
     time_t temp = time(NULL);
     struct tm *tick_time = localtime(&temp);
 
-    static char s_m_buffer[4];
-    strftime(s_m_buffer, sizeof(s_m_buffer), "%M", tick_time);
-    text_layer_set_text(target, s_m_buffer); 
+    if(time_hours_pointer != context){
+        static char s_m_buffer[4];
+        strftime(s_m_buffer, sizeof(s_m_buffer), "%M", tick_time);
+        text_layer_set_text(target, s_m_buffer); 
+    }
+
+    else{
+        static char s_h_buffer[4];
+        strftime(s_h_buffer, sizeof(s_h_buffer), clock_is_24h_style() ? "%H" : "%I", tick_time);
+        text_layer_set_text(target, s_h_buffer); 
+    }
+}
+
+void select_animate_time(TextLayer *time_minutes, TextLayer *time_hours){
+    time_hours_pointer = time_hours;
+
+    time_t temp = time(NULL);
+    struct tm *tick_time = localtime(&temp);
+    animate_time(time_minutes, 100);
 
     static char s_h_buffer[4];
-    strftime(s_h_buffer, sizeof(s_h_buffer), clock_is_24h_style() ? "%H" : "%I", tick_time);
-    text_layer_set_text(target, s_h_buffer); 
+    strftime(s_h_buffer, sizeof(s_h_buffer), "%H", tick_time);
+    
+    if(strcmp(s_h_buffer, text_layer_get_text(time_hours))){
+        animate_time(time_hours, 0);
+    }
 }
 
 void animate_time(TextLayer *target, int additional_delay){
-    //problem, currently i can't differentiate between minutes and hours.
-    //either i pass the whole time struct, which imho doesn't work great(?) or i work around it someway
-    
     Animation **arr = (Animation**)malloc(2 * sizeof(Animation*));
 
     const int duration_ms = 300;

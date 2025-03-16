@@ -52,21 +52,6 @@ static void update_time(){
     text_layer_set_text(s_TimeLayer.minutes, s_m_buffer);
 }
 
-static void update_with_anim(bool first_update){
-    if(!first_update) animate_grid(s_textgrid_elements);
-    animate_time(s_TimeLayer.minutes, 100);
-
-    time_t temp = time(NULL);
-    struct tm *tick_time = localtime(&temp);
-
-    static char s_h_buffer[4];
-    strftime(s_h_buffer, sizeof(s_h_buffer), "%H", tick_time);
-    
-    if(strcmp(s_h_buffer, text_layer_get_text(s_TimeLayer.hours))){
-        animate_time(s_TimeLayer.hours, 0);
-    }
-}
-
 /* TODO: put the current date inside the textgrid
    Hopefully that won't involve rewriting the whole thing.
    Surely it won't, right?
@@ -99,7 +84,8 @@ static void update_date(){
 */
 
 static void tick_minute_handler(struct tm *tick_time, TimeUnits units_changed){
-    update_with_anim(false);
+    animate_grid(s_textgrid_elements);
+    select_animate_time(s_TimeLayer.minutes, s_TimeLayer.hours);
 }
 
 //LAYER CREATION
