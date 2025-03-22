@@ -1,5 +1,3 @@
-# ignores build output
 build/
-
-#ignore lock file
 .lock-waf_linux2_build
+node_modules

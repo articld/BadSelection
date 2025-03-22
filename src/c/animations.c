@@ -22,6 +22,10 @@ void anim_stopped_handler(Animation *animation, bool finished, void *context) {
     text_layer_set_text(context, s_str[s_animation_counter]);
 
     s_animation_counter = (s_animation_counter + 1) % 60;
+
+    if(!finished){
+        animation_destroy(animation);
+    }
 }
 
 void anim_1_started_handler(Animation *animation, void *context) {
@@ -111,6 +115,10 @@ void time_anim_stopped_handler(Animation *animation, bool finished, void *contex
         static char s_h_buffer[4];
         strftime(s_h_buffer, sizeof(s_h_buffer), clock_is_24h_style() ? "%H" : "%I", tick_time);
         text_layer_set_text(target, s_h_buffer); 
+    }
+    
+    if(!finished){
+        animation_destroy(animation);
     }
 }
 

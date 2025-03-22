@@ -18,6 +18,7 @@ Well, I guess if I was a good salesman I could say that this watchface is design
 
 Current TODOs:
 
+- Add Emery support. Thank you, Eric.
 - Clean up the code.
 - Embed the current date in the text grid
 - Add customization options.

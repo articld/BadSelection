@@ -2,6 +2,7 @@
 #include "animations.h"
 
 #define _NUM_ELEM_ 60
+#define _SETTINGS_KEY_ 1
 
 #if defined (PBL_COLOR)
 
@@ -19,6 +20,8 @@
 
 #endif
 
+//STATIC DECLARATIONS
+//-----------------------------------------------------------------------------
 
 static Window *s_window;
 
@@ -26,8 +29,12 @@ typedef struct{
     TextLayer *hours, *minutes, *separator;
 
 } TL;
-
 static TL s_TimeLayer;
+
+typedef struct{
+    GColor bg_color, accent_color, time_color, textgrid_color;
+} ClaySettings;
+static ClaySettings settings;
 
 static Layer *s_TimeLayer_bg;
 
@@ -35,6 +42,7 @@ static TextLayer *s_textgrid_elements[_NUM_ELEM_];
 
 static GFont s_time_font, s_textgrid_font;
 //static GFont s_date_font;
+
 
 //TIMEKEEPING
 //-----------------------------------------------------------------------------
@@ -114,7 +122,7 @@ static void create_text_grid(Layer *target){
 
         text_layer_set_font(s_textgrid_elements[i], s_textgrid_font);
         text_layer_set_background_color(s_textgrid_elements[i], GColorClear);
-        text_layer_set_text_color(s_textgrid_elements[i], _TEXTGRID_COLOR_ );
+        text_layer_set_text_color(s_textgrid_elements[i], settings.textgrid_color);
         text_layer_set_text_alignment(s_textgrid_elements[i], GTextAlignmentLeft);
         layer_add_child(target, text_layer_get_layer(s_textgrid_elements[i])); 
     }
@@ -123,8 +131,8 @@ static void create_text_grid(Layer *target){
 }
 
 static void draw_timebox_canvas(Layer *layer, GContext *ctx){
-    graphics_context_set_stroke_color(ctx, _ACCENT_BG_COLOR_);
-    graphics_context_set_fill_color(ctx, _ACCENT_BG_COLOR_);    
+    graphics_context_set_stroke_color(ctx, settings.accent_color);
+    graphics_context_set_fill_color(ctx, settings.accent_color);    
 
     GRect rect_bounds = layer_get_bounds(layer);
     graphics_fill_rect(ctx, rect_bounds, 0, GCornerNone); 
@@ -152,17 +160,17 @@ static void create_time(Layer *target){
     layer_mark_dirty(s_TimeLayer_bg);
 
     text_layer_set_font(s_TimeLayer.hours, s_time_font);
-    text_layer_set_text_color(s_TimeLayer.hours, _TIME_COLOR_ );
+    text_layer_set_text_color(s_TimeLayer.hours, settings.time_color);
     text_layer_set_background_color(s_TimeLayer.hours, GColorClear);
     text_layer_set_text_alignment(s_TimeLayer.hours, GTextAlignmentLeft);
 
     text_layer_set_font(s_TimeLayer.minutes, s_time_font);
-    text_layer_set_text_color(s_TimeLayer.minutes, _TIME_COLOR_);
+    text_layer_set_text_color(s_TimeLayer.minutes, settings.time_color);
     text_layer_set_background_color(s_TimeLayer.minutes, GColorClear);
     text_layer_set_text_alignment(s_TimeLayer.minutes, GTextAlignmentLeft);
 
     text_layer_set_font(s_TimeLayer.separator, s_time_font);
-    text_layer_set_text_color(s_TimeLayer.separator, _TIME_COLOR_ );
+    text_layer_set_text_color(s_TimeLayer.separator, settings.time_color );
     text_layer_set_background_color(s_TimeLayer.separator, GColorClear);
     text_layer_set_text_alignment(s_TimeLayer.separator, GTextAlignmentLeft);
     text_layer_set_text(s_TimeLayer.separator, ":");
@@ -172,9 +180,72 @@ static void create_time(Layer *target){
     layer_add_child(target, text_layer_get_layer(s_TimeLayer.separator));
 }
 
+//CONFIGDATA
+//-----------------------------------------------------------------------------
+
+static void default_settings(){
+    //might as well use what i've already written
+    settings.bg_color = _BG_COLOR_;
+    settings.accent_color = _ACCENT_BG_COLOR_;
+    settings.time_color = _TIME_COLOR_; 
+    settings.textgrid_color = _TEXTGRID_COLOR_; 
+}
+
+static void save_settings(){
+    persist_write_data(_SETTINGS_KEY_, &settings, sizeof(settings));
+}
+
+static void load_settings(){
+    default_settings();
+    persist_read_data(_SETTINGS_KEY_, &settings, sizeof(settings));
+}
+
+static void update_settings(){
+    text_layer_set_text_color(s_TimeLayer.hours, settings.time_color);
+    text_layer_set_text_color(s_TimeLayer.minutes, settings.time_color);
+    text_layer_set_text_color(s_TimeLayer.separator, settings.time_color);
+
+    for(int i = 0; i < _NUM_ELEM_; i++){
+        text_layer_set_text_color(s_textgrid_elements[i], settings.textgrid_color);
+    }
+
+    window_set_background_color(s_window, settings.bg_color);
+
+    layer_set_update_proc(s_TimeLayer_bg, draw_timebox_canvas);
+    layer_mark_dirty(s_TimeLayer_bg);
+}
+
+static void config_data_received_handler(DictionaryIterator *iter, void *context) {
+    Tuple *accent_color_t = dict_find(iter, MESSAGE_KEY_AccentColor);
+    if(accent_color_t) {
+        settings.accent_color = GColorFromHEX(accent_color_t->value->int32);
+    }
+
+    Tuple *bg_color_t = dict_find(iter, MESSAGE_KEY_BGColor);
+    if(bg_color_t) {
+        settings.bg_color = GColorFromHEX(bg_color_t->value->int32);
+    }
+
+    Tuple *time_color_t = dict_find(iter, MESSAGE_KEY_TimeColor);
+    if(time_color_t) {
+        settings.time_color = GColorFromHEX(time_color_t->value->int32);
+    }   
+
+    Tuple *textgrid_color_t = dict_find(iter, MESSAGE_KEY_TextGridColor);
+    if(textgrid_color_t) {
+        settings.textgrid_color = GColorFromHEX(textgrid_color_t->value->int32);
+    } 
+
+    save_settings();
+    update_settings();
+}
+
+//MAIN LOADERS/UNLOADERS
+//-----------------------------------------------------------------------------
+
 static void main_window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
-    window_set_background_color(s_window, _BG_COLOR_ );
+    window_set_background_color(s_window, settings.bg_color);
 
     create_text_grid(window_layer);
     create_time(window_layer);
@@ -197,6 +268,8 @@ static void main_window_unload(Window *window) {
 }
 
 static void init(void) {
+    load_settings();
+
     srand(time(NULL));
     tick_timer_service_subscribe(MINUTE_UNIT, tick_minute_handler);
 
@@ -208,6 +281,9 @@ static void init(void) {
     });
     const bool animated = true;
     window_stack_push(s_window, animated);
+
+    app_message_register_inbox_received(config_data_received_handler);
+    app_message_open(128,128);
 
     update_time();
     //update_date();

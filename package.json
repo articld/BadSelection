@@ -1,10 +1,17 @@
 {
   "name": "Bad Selection",
   "author": "Articld",
-  "version": "0.4.0",
-  "keywords": ["pebble-watchface"],
+  "version": "0.5.0",
+  "keywords": [
+    "pebble-watchface"
+  ],
   "private": false,
-  "dependencies": {},
+  "dependencies": {
+    "pebble-clay": "^1.0.4"
+  },
+  "capabilities": [
+    "configurable"
+  ],
   "pebble": {
     "displayName": "Bad Selection",
     "uuid": "77e68bfb-2c15-4652-8e9a-fd658da49f8f",
@@ -19,27 +26,30 @@
       "watchface": true
     },
     "messageKeys": [
-      "dummy"
+      "AccentColor",
+      "BGColor",
+      "TimeColor",
+      "TextGridColor"
     ],
     "resources": {
       "media": [
         {
-          "type":"font",
-          "name":"FONT_FEATURE_MONO_BLACK_35",
-          "file":"fonts/featuremono-black.ttf",
-          "characterRegex":"[0-9:APM ]"
+          "type": "font",
+          "name": "FONT_FEATURE_MONO_BLACK_35",
+          "file": "fonts/featuremono-black.ttf",
+          "characterRegex": "[0-9:APM ]"
         },
         {
-          "type":"font",
-          "name":"FONT_FEATURE_MONO_BOLD_19",
-          "file":"fonts/featuremono-regular.ttf",
-          "characterRegex":"[A-Z]"
+          "type": "font",
+          "name": "FONT_FEATURE_MONO_BOLD_19",
+          "file": "fonts/featuremono-regular.ttf",
+          "characterRegex": "[A-Z]"
         },
         {
-          "type":"font",
-          "name":"FONT_FEATURE_MONO_REGULAR_20",
-          "file":"fonts/featuremono-regular.ttf",
-          "characterRegex":"[a-z]"
+          "type": "font",
+          "name": "FONT_FEATURE_MONO_REGULAR_20",
+          "file": "fonts/featuremono-regular.ttf",
+          "characterRegex": "[a-z]"
         }
       ]
     }
