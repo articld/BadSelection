@@ -26,23 +26,23 @@
 static Window *s_window;
 
 typedef struct{
+    GColor bg_color, accent_color, time_color, textgrid_color;
+    bool textgrid_animation;
+} ClaySettings;
+static ClaySettings settings;
+
+typedef struct{
     TextLayer *hours, *minutes, *separator;
 
 } TL;
 static TL s_TimeLayer;
-
-typedef struct{
-    GColor bg_color, accent_color, time_color, textgrid_color;
-} ClaySettings;
-static ClaySettings settings;
-
 static Layer *s_TimeLayer_bg;
-
 static TextLayer *s_textgrid_elements[_NUM_ELEM_];
 
 static GFont s_time_font, s_textgrid_font;
 //static GFont s_date_font;
 
+static GRect s_time_box;
 
 //TIMEKEEPING
 //-----------------------------------------------------------------------------
@@ -91,15 +91,7 @@ static void update_date(){
 }
 */
 
-static void tick_minute_handler(struct tm *tick_time, TimeUnits units_changed){
-    animate_grid(s_textgrid_elements);
-    select_animate_time(s_TimeLayer.minutes, s_TimeLayer.hours);
-}
-
-//LAYER CREATION
-//-----------------------------------------------------------------------------
-
-static void shuffle_grid_text(){
+static void shuffle_textgrid(){
     static char s_str[_NUM_ELEM_][2] = {{'a', '\0'}};
 
     for(int i = 0; i<_NUM_ELEM_; i++){
@@ -108,7 +100,19 @@ static void shuffle_grid_text(){
     }
 }
 
-static void create_text_grid(Layer *target){
+static void tick_minute_handler(struct tm *tick_time, TimeUnits units_changed){
+    if(settings.textgrid_animation)
+        animate_grid(s_textgrid_elements);
+    else
+        shuffle_textgrid();
+
+    select_animate_time(s_TimeLayer.minutes, s_TimeLayer.hours);
+}
+
+//LAYER CREATION
+//-----------------------------------------------------------------------------
+
+static void create_textgrid(Layer *target){
     int x_coord = 0;
     int y_coord = 0;
     s_textgrid_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FEATURE_MONO_REGULAR_20));
@@ -127,7 +131,7 @@ static void create_text_grid(Layer *target){
         layer_add_child(target, text_layer_get_layer(s_textgrid_elements[i])); 
     }
 
-    shuffle_grid_text();
+    shuffle_textgrid();
 }
 
 static void draw_timebox_canvas(Layer *layer, GContext *ctx){
@@ -139,13 +143,13 @@ static void draw_timebox_canvas(Layer *layer, GContext *ctx){
 }
 
 static void create_time(Layer *target){
+    s_time_box = GRect(0, 59, 112, 48);
     s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FEATURE_MONO_BLACK_35));
-    GRect time_box = GRect(0, 59, 112, 48);
 
-    const int time_x = time_box.origin.x + 3;
+    const int time_x = s_time_box.origin.x + 3;
 
     const int time_h = 48;
-    const int time_y = time_box.origin.y;
+    const int time_y = s_time_box.origin.y;
 
     const int time_w = 44;
     const int time_w_separator = 24;
@@ -154,7 +158,7 @@ static void create_time(Layer *target){
     s_TimeLayer.separator =text_layer_create(GRect(time_x + time_w, time_y, time_w_separator, time_h));
     s_TimeLayer.minutes = text_layer_create(GRect(time_x + time_w + time_w_separator - 5, time_y, time_w, time_h));
 
-    s_TimeLayer_bg = layer_create(time_box);
+    s_TimeLayer_bg = layer_create(s_time_box);
     layer_set_update_proc(s_TimeLayer_bg, draw_timebox_canvas);
     layer_add_child(target, s_TimeLayer_bg);
     layer_mark_dirty(s_TimeLayer_bg);
@@ -189,6 +193,8 @@ static void default_settings(){
     settings.accent_color = _ACCENT_BG_COLOR_;
     settings.time_color = _TIME_COLOR_; 
     settings.textgrid_color = _TEXTGRID_COLOR_; 
+
+    settings.textgrid_animation = true;
 }
 
 static void save_settings(){
@@ -236,6 +242,11 @@ static void config_data_received_handler(DictionaryIterator *iter, void *context
         settings.textgrid_color = GColorFromHEX(textgrid_color_t->value->int32);
     } 
 
+    Tuple *textgrid_animation_t = dict_find(iter, MESSAGE_KEY_TextGridAnimation);
+    if(textgrid_animation_t){
+        settings.textgrid_animation = textgrid_animation_t->value->int32 == 1;
+    }
+
     save_settings();
     update_settings();
 }
@@ -247,7 +258,7 @@ static void main_window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     window_set_background_color(s_window, settings.bg_color);
 
-    create_text_grid(window_layer);
+    create_textgrid(window_layer);
     create_time(window_layer);
 
 }

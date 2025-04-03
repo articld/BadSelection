@@ -38,6 +38,12 @@ module.exports = [
         "defaultValue": "0x555555",
         "label": "Text Grid Color"
       },
+      {
+        "type":"toggle",
+        "messageKey":"TextGridAnimation",
+        "label": "Enable/Disable the TextGrid animation",
+        "defaultValue":true
+      }
     ]
   },
   {

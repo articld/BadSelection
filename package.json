@@ -1,7 +1,7 @@
 {
   "name": "Bad Selection",
   "author": "Articld",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "keywords": [
     "pebble-watchface"
   ],
@@ -29,7 +29,8 @@
       "AccentColor",
       "BGColor",
       "TimeColor",
-      "TextGridColor"
+      "TextGridColor",
+      "TextGridAnimation"
     ],
     "resources": {
       "media": [
