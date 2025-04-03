@@ -30,7 +30,8 @@
       "BGColor",
       "TimeColor",
       "TextGridColor",
-      "TextGridAnimation"
+      "TextGridAnimation",
+      "TimeBoxPosition"
     ],
     "resources": {
       "media": [
