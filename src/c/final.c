@@ -113,7 +113,7 @@ static void tick_minute_handler(struct tm *tick_time, TimeUnits units_changed){
     else
         shuffle_textgrid();
 
-    select_animate_time(s_TimeLayer.minutes, s_TimeLayer.hours);
+    select_animate_time(s_TimeLayer.minutes, s_TimeLayer.hours, settings.textgrid_animation);
 }
 
 //LAYER CREATION

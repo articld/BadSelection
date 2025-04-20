@@ -20,7 +20,7 @@ void time_anim_started_handler(Animation *animation, void *context);
 
 void time_anim_stopped_handler(Animation *animation, bool finished, void *context);
 
-void select_animate_time(TextLayer *time_minutes, TextLayer *time_hours);
+void select_animate_time(TextLayer *time_minutes, TextLayer *time_hours, bool is_textgrid_animated);
 
-void animate_time(TextLayer *target, int additional_delay);
+void animate_time(TextLayer *target, int additional_delay, bool is_textgrid_animated);
 #endif

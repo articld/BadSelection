@@ -122,26 +122,26 @@ void time_anim_stopped_handler(Animation *animation, bool finished, void *contex
     }
 }
 
-void select_animate_time(TextLayer *time_minutes, TextLayer *time_hours){
+void select_animate_time(TextLayer *time_minutes, TextLayer *time_hours, bool is_textgrid_animated){
     time_hours_pointer = time_hours;
 
     time_t temp = time(NULL);
     struct tm *tick_time = localtime(&temp);
-    animate_time(time_minutes, 100);
+    animate_time(time_minutes, 100, is_textgrid_animated);
 
     static char s_h_buffer[4];
     strftime(s_h_buffer, sizeof(s_h_buffer), "%H", tick_time);
     
     if(strcmp(s_h_buffer, text_layer_get_text(time_hours))){
-        animate_time(time_hours, 0);
+        animate_time(time_hours, 0, is_textgrid_animated);
     }
 }
 
-void animate_time(TextLayer *target, int additional_delay){
+void animate_time(TextLayer *target, int additional_delay, bool is_textgrid_animated){
     Animation **arr = (Animation**)malloc(2 * sizeof(Animation*));
 
     const int duration_ms = 300;
-    const int delay_ms = (75 * _NUM_ELEM_ / 2) + additional_delay;
+    const int delay_ms = is_textgrid_animated? (75 * _NUM_ELEM_ / 2) : 0 + additional_delay;
 
     Layer *time_layer = text_layer_get_layer(target);
 
