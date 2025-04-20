@@ -26,7 +26,6 @@
 static Window *s_window;
 
 enum TimeBoxPosition{
-    //overkill? maybe.
     LEFT,
     MIDDLE,
     RIGHT
@@ -120,6 +119,22 @@ static void tick_minute_handler(struct tm *tick_time, TimeUnits units_changed){
 //LAYER CREATION
 //-----------------------------------------------------------------------------
 
+static void update_textgrid_visibility(){
+    int x_coord = 0;
+    int y_coord = 0;
+
+    for(int i=0; i<_NUM_ELEM_; i++){
+        Layer *current_element_layer = text_layer_get_layer(s_textgrid_elements[i]);
+        x_coord = layer_get_frame(current_element_layer).origin.x;
+        y_coord = layer_get_frame(current_element_layer).origin.y;
+
+        if(y_coord > s_time_box.origin.y && y_coord < s_time_box.size.h && x_coord > s_time_box.origin.x && x_coord < s_time_box.size.w) 
+            layer_set_hidden(text_layer_get_layer(s_textgrid_elements[i]), true);
+
+        layer_mark_dirty(text_layer_get_layer(s_textgrid_elements[i]));
+    }
+}
+
 static void create_textgrid(Layer *target){
     int x_coord = 0;
     int y_coord = 0;
@@ -130,8 +145,6 @@ static void create_textgrid(Layer *target){
         if(i) y_coord = (i % 10)? y_coord : y_coord + 27;
 
         s_textgrid_elements[i] = text_layer_create(GRect(x_coord, y_coord, 13, 25));
-        if(y_coord > s_time_box.origin.y && y_coord < s_time_box.size.h && x_coord > s_time_box.origin.x && x_coord < s_time_box.size.w) 
-            layer_set_hidden(text_layer_get_layer(s_textgrid_elements[i]), true);
 
         text_layer_set_font(s_textgrid_elements[i], s_textgrid_font);
         text_layer_set_background_color(s_textgrid_elements[i], GColorClear);
@@ -140,6 +153,7 @@ static void create_textgrid(Layer *target){
         layer_add_child(target, text_layer_get_layer(s_textgrid_elements[i])); 
     }
 
+    update_textgrid_visibility();
     shuffle_textgrid();
 }
 
@@ -165,8 +179,11 @@ static void select_time_box_coords(){
 }
 
 static void create_time(Layer *target){
+    //doubles up as first time creation and on settings change update
     select_time_box_coords();
-    s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FEATURE_MONO_BLACK_35));
+
+    if(!s_time_font)
+        s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FEATURE_MONO_BLACK_35));
 
     const int time_x = s_time_box.origin.x + 3;
 
@@ -176,34 +193,59 @@ static void create_time(Layer *target){
     const int time_w = 44;
     const int time_w_separator = 24;
 
-    s_TimeLayer.hours = text_layer_create(GRect(time_x, time_y, time_w, time_h));
-    s_TimeLayer.separator =text_layer_create(GRect(time_x + time_w, time_y, time_w_separator, time_h));
-    s_TimeLayer.minutes = text_layer_create(GRect(time_x + time_w + time_w_separator - 5, time_y, time_w, time_h));
+    if(!s_TimeLayer_bg)
+        s_TimeLayer_bg = layer_create(GRectZero);
 
-    s_TimeLayer_bg = layer_create(s_time_box);
+    layer_set_frame(s_TimeLayer_bg, s_time_box);
     layer_set_update_proc(s_TimeLayer_bg, draw_timebox_canvas);
     layer_add_child(target, s_TimeLayer_bg);
     layer_mark_dirty(s_TimeLayer_bg);
 
-    text_layer_set_font(s_TimeLayer.hours, s_time_font);
-    text_layer_set_text_color(s_TimeLayer.hours, settings.time_color);
-    text_layer_set_background_color(s_TimeLayer.hours, GColorClear);
-    text_layer_set_text_alignment(s_TimeLayer.hours, GTextAlignmentLeft);
+    if(!s_TimeLayer.hours){
+        s_TimeLayer.hours = text_layer_create(GRect(time_x, time_y, time_w, time_h));
+        s_TimeLayer.separator = text_layer_create(GRect(time_x + time_w, time_y, time_w_separator, time_h));
+        s_TimeLayer.minutes = text_layer_create(GRect(time_x + time_w + time_w_separator - 5, time_y, time_w, time_h));
 
-    text_layer_set_font(s_TimeLayer.minutes, s_time_font);
-    text_layer_set_text_color(s_TimeLayer.minutes, settings.time_color);
-    text_layer_set_background_color(s_TimeLayer.minutes, GColorClear);
-    text_layer_set_text_alignment(s_TimeLayer.minutes, GTextAlignmentLeft);
+        text_layer_set_font(s_TimeLayer.hours, s_time_font);
+        text_layer_set_text_color(s_TimeLayer.hours, settings.time_color);
+        text_layer_set_text_alignment(s_TimeLayer.hours, GTextAlignmentLeft);
+        text_layer_set_background_color(s_TimeLayer.hours, GColorClear);
 
-    text_layer_set_font(s_TimeLayer.separator, s_time_font);
-    text_layer_set_text_color(s_TimeLayer.separator, settings.time_color );
-    text_layer_set_background_color(s_TimeLayer.separator, GColorClear);
-    text_layer_set_text_alignment(s_TimeLayer.separator, GTextAlignmentLeft);
-    text_layer_set_text(s_TimeLayer.separator, ":");
+        text_layer_set_font(s_TimeLayer.minutes, s_time_font);
+        text_layer_set_text_color(s_TimeLayer.minutes, settings.time_color);
+        text_layer_set_text_alignment(s_TimeLayer.minutes, GTextAlignmentLeft);
+        text_layer_set_background_color(s_TimeLayer.minutes, GColorClear);
 
-    layer_add_child(target, text_layer_get_layer(s_TimeLayer.hours));
-    layer_add_child(target, text_layer_get_layer(s_TimeLayer.minutes));
-    layer_add_child(target, text_layer_get_layer(s_TimeLayer.separator));
+        text_layer_set_font(s_TimeLayer.separator, s_time_font);
+        text_layer_set_text_color(s_TimeLayer.separator, settings.time_color );
+        text_layer_set_background_color(s_TimeLayer.separator, GColorClear);
+        text_layer_set_text_alignment(s_TimeLayer.separator, GTextAlignmentLeft);
+        text_layer_set_text(s_TimeLayer.separator, ":");
+
+        layer_insert_above_sibling(text_layer_get_layer(s_TimeLayer.hours), s_TimeLayer_bg);
+        layer_insert_above_sibling(text_layer_get_layer(s_TimeLayer.minutes), s_TimeLayer_bg);
+        layer_insert_above_sibling(text_layer_get_layer(s_TimeLayer.separator), s_TimeLayer_bg);
+    }
+
+    else{
+        text_layer_set_text_color(s_TimeLayer.hours, settings.time_color);
+        text_layer_set_text_color(s_TimeLayer.minutes, settings.time_color);
+        text_layer_set_text_color(s_TimeLayer.separator, settings.time_color); 
+
+        Layer *hours_layer = text_layer_get_layer(s_TimeLayer.hours);
+        Layer *separator_layer = text_layer_get_layer(s_TimeLayer.separator);
+        Layer *minutes_layer = text_layer_get_layer(s_TimeLayer.minutes);
+
+        layer_set_frame(hours_layer, GRect(time_x, time_y, time_w, time_h));
+        layer_set_frame(separator_layer, GRect(time_x + time_w, time_y, time_w_separator, time_h));
+        layer_set_frame(minutes_layer, GRect(time_x + time_w + time_w_separator - 5, time_y, time_w, time_h));
+
+        //FIXME: this horrible mess shouldn't be required.
+        layer_insert_above_sibling(hours_layer, s_TimeLayer_bg);
+        layer_insert_above_sibling(separator_layer, s_TimeLayer_bg);
+        layer_insert_above_sibling(minutes_layer, s_TimeLayer_bg);
+    }
+
 }
 
 //CONFIGDATA
@@ -217,7 +259,7 @@ static void default_settings(){
     settings.textgrid_color = _TEXTGRID_COLOR_; 
 
     settings.textgrid_animation = true;
-    settings.time_box_position = MIDDLE;
+    settings.time_box_position = LEFT;
 }
 
 static void save_settings(){
@@ -230,18 +272,12 @@ static void load_settings(){
 }
 
 static void update_settings(){
-    text_layer_set_text_color(s_TimeLayer.hours, settings.time_color);
-    text_layer_set_text_color(s_TimeLayer.minutes, settings.time_color);
-    text_layer_set_text_color(s_TimeLayer.separator, settings.time_color);
-
     for(int i = 0; i < _NUM_ELEM_; i++){
         text_layer_set_text_color(s_textgrid_elements[i], settings.textgrid_color);
     }
 
-    window_set_background_color(s_window, settings.bg_color);
-
-    layer_set_update_proc(s_TimeLayer_bg, draw_timebox_canvas);
-    layer_mark_dirty(s_TimeLayer_bg);
+    create_time(window_get_root_layer(s_window));
+    update_textgrid_visibility();
 }
 
 static void config_data_received_handler(DictionaryIterator *iter, void *context) {
@@ -272,7 +308,9 @@ static void config_data_received_handler(DictionaryIterator *iter, void *context
 
     Tuple *time_box_position_t = dict_find(iter, MESSAGE_KEY_TimeBoxPosition);
     if(time_box_position_t){
-        settings.time_box_position = textgrid_animation_t->value->int32;
+        //idk why but this thing only sends strings
+        //FIXME: this works but i kinda need to see what's going on.
+        settings.time_box_position = time_box_position_t->value->int32 - 48;
     }
 
     save_settings();
