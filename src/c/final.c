@@ -42,6 +42,7 @@ typedef struct{
     TextLayer *hours, *minutes, *separator;
 
 } TL;
+
 static TL s_TimeLayer;
 static Layer *s_TimeLayer_bg;
 static TextLayer *s_textgrid_elements[_NUM_ELEM_];
@@ -119,6 +120,12 @@ static void tick_minute_handler(struct tm *tick_time, TimeUnits units_changed){
 //LAYER CREATION
 //-----------------------------------------------------------------------------
 
+static void text_layer_set_style(TextLayer *text, GFont font, GColor text_color, GColor bg_color){
+        text_layer_set_font(text, font);
+        text_layer_set_text_color(text, text_color);
+        text_layer_set_background_color(text, bg_color);
+}
+
 static void update_textgrid_visibility(){
     int x_coord = 0;
     int y_coord = 0;
@@ -145,11 +152,7 @@ static void create_textgrid(Layer *target){
         if(i) y_coord = (i % 10)? y_coord : y_coord + 27;
 
         s_textgrid_elements[i] = text_layer_create(GRect(x_coord, y_coord, 13, 25));
-
-        text_layer_set_font(s_textgrid_elements[i], s_textgrid_font);
-        text_layer_set_background_color(s_textgrid_elements[i], GColorClear);
-        text_layer_set_text_color(s_textgrid_elements[i], settings.textgrid_color);
-        text_layer_set_text_alignment(s_textgrid_elements[i], GTextAlignmentLeft);
+        text_layer_set_style(s_textgrid_elements[i], s_textgrid_font, settings.textgrid_color, GColorClear);
         layer_add_child(target, text_layer_get_layer(s_textgrid_elements[i])); 
     }
 
@@ -206,20 +209,9 @@ static void create_time(Layer *target){
         s_TimeLayer.separator = text_layer_create(GRect(time_x + time_w, time_y, time_w_separator, time_h));
         s_TimeLayer.minutes = text_layer_create(GRect(time_x + time_w + time_w_separator - 5, time_y, time_w, time_h));
 
-        text_layer_set_font(s_TimeLayer.hours, s_time_font);
-        text_layer_set_text_color(s_TimeLayer.hours, settings.time_color);
-        text_layer_set_text_alignment(s_TimeLayer.hours, GTextAlignmentLeft);
-        text_layer_set_background_color(s_TimeLayer.hours, GColorClear);
-
-        text_layer_set_font(s_TimeLayer.minutes, s_time_font);
-        text_layer_set_text_color(s_TimeLayer.minutes, settings.time_color);
-        text_layer_set_text_alignment(s_TimeLayer.minutes, GTextAlignmentLeft);
-        text_layer_set_background_color(s_TimeLayer.minutes, GColorClear);
-
-        text_layer_set_font(s_TimeLayer.separator, s_time_font);
-        text_layer_set_text_color(s_TimeLayer.separator, settings.time_color );
-        text_layer_set_background_color(s_TimeLayer.separator, GColorClear);
-        text_layer_set_text_alignment(s_TimeLayer.separator, GTextAlignmentLeft);
+        text_layer_set_style(s_TimeLayer.hours, s_time_font, settings.time_color, GColorClear);
+        text_layer_set_style(s_TimeLayer.minutes, s_time_font, settings.time_color, GColorClear);
+        text_layer_set_style(s_TimeLayer.separator, s_time_font, settings.time_color, GColorClear);
         text_layer_set_text(s_TimeLayer.separator, ":");
 
         layer_insert_above_sibling(text_layer_get_layer(s_TimeLayer.hours), s_TimeLayer_bg);
