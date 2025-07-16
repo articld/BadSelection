@@ -43,9 +43,9 @@
         },
         {
           "type": "font",
-          "name": "FONT_FEATURE_MONO_BOLD_19",
-          "file": "fonts/featuremono-regular.ttf",
-          "characterRegex": "[A-Z]"
+          "name": "FONT_FEATURE_MONO_BOLD_20",
+          "file": "fonts/featuremono-bold.ttf",
+          "characterRegex": "[0-9/]"
         },
         {
           "type": "font",

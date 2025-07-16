@@ -43,17 +43,39 @@ typedef struct{
 
 } TL;
 
-static TL s_TimeLayer;
+static TL s_TimeLayers;
 static Layer *s_TimeLayer_bg;
 static TextLayer *s_textgrid_elements[_NUM_ELEM_];
 
 static GFont s_time_font, s_textgrid_font;
 //static GFont s_date_font;
 
+
 static GRect s_time_box;
+
+//UTILITY FUNCTIONS
+//-----------------------------------------------------------------------------
+
+static void text_layer_set_style(TextLayer *text, GFont font, GColor text_color, GColor bg_color){
+        text_layer_set_font(text, font);
+        text_layer_set_text_color(text, text_color);
+        text_layer_set_background_color(text, bg_color);
+}
+
+static void shuffle_textgrid(){
+    static char s_str[_NUM_ELEM_][2] = {{'a', '\0'}};
+
+    for(uint i = 0; i<_NUM_ELEM_; i++){
+        s_str[i][0] = rand() % 26 + 97;
+        text_layer_set_text(s_textgrid_elements[i], s_str[i]);
+    }
+}
+
+
 
 //TIMEKEEPING
 //-----------------------------------------------------------------------------
+
 static void update_time(){
     time_t temp = time(NULL);
     struct tm *tick_time = localtime(&temp);
@@ -64,49 +86,49 @@ static void update_time(){
     strftime(s_h_buffer, sizeof(s_h_buffer), "%H", tick_time);
     strftime(s_m_buffer, sizeof(s_m_buffer), "%M", tick_time);
 
-    text_layer_set_text(s_TimeLayer.hours, s_h_buffer);
-    text_layer_set_text(s_TimeLayer.minutes, s_m_buffer);
+    text_layer_set_text(s_TimeLayers.hours, s_h_buffer);
+    text_layer_set_text(s_TimeLayers.minutes, s_m_buffer);
 }
 
-/* TODO: put the current date inside the textgrid
-   Hopefully that won't involve rewriting the whole thing.
-   Surely it won't, right?
-   
+/* 
+
+    !!!!!!! WARNING !!!!!!!!!!
+    RICORDATI DI INIZIALIZZARE LE VARIABILI
+
 static void update_date(){
+    //TODO: settings key for killing last row of textgrid
+    //Animate indipendently the date from the rest of the grid
+    //Put text accordingly
+
     time_t temp = time(NULL);
     struct tm *tick_time = localtime(&temp);
 
-    static char s_buffer[8];
-    static char s_textgrid_buffer[8][2] = {{'a', '\0'}};
+    s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FEATURE_MONO_BOLD_20));
 
-    s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_IBM_BOLD_21));
+    static char s_mday[3];
+    static char s_month[3];
+    static char s_year[5];
 
-    strftime(s_buffer, sizeof(s_buffer), "%a", tick_time);
+    strftime(s_mday, sizeof(s_mday), "%d", tick_time);
+    strftime(s_month, sizeof(s_month), "%m", tick_time);
+    strftime(s_year, sizeof(s_year), "%Y", tick_time);
 
-    //we have a toupper function at home.
-    //the toupper function:
-    for(int i = 1; i < 3; i++){
-        s_buffer[i] = s_buffer[i] - 32;
-    }
+    uint x_coord = 0;
+    uint y_coord = 0;
 
-    for(int i = 0; i < 3; i++){
-        s_textgrid_buffer[i][0] = s_buffer[i];
+    for(uint i=0; i < sizeof(s_dategrid_elements); i++){
+        x_coord = 3 + i * 14;
+        y_coord = 135;
 
-        text_layer_set_font(s_textgrid_elements[i], s_date_font);
-        text_layer_set_text_color(s_textgrid_elements[i], GColorDarkGray);
-        text_layer_set_text(s_textgrid_elements[i], s_textgrid_buffer[i]);
-    }
+        s_dategrid_elements[i] = text_layer_create(GRect(x_coord, y_coord, 13, 25));
+        text_layer_set_style(s_dategrid_elements[i], s_textgrid_font, settings.textgrid_color, GColorClear);
+        layer_add_child(window_get_root_layer(s_window), text_layer_get_layer(s_dategrid_elements[i])); 
+    }    
+
 }
+   
+
 */
-
-static void shuffle_textgrid(){
-    static char s_str[_NUM_ELEM_][2] = {{'a', '\0'}};
-
-    for(int i = 0; i<_NUM_ELEM_; i++){
-        s_str[i][0] = rand() % 26 + 97;
-        text_layer_set_text(s_textgrid_elements[i], s_str[i]);
-    }
-}
 
 static void tick_minute_handler(struct tm *tick_time, TimeUnits units_changed){
     if(settings.textgrid_animation)
@@ -114,23 +136,17 @@ static void tick_minute_handler(struct tm *tick_time, TimeUnits units_changed){
     else
         shuffle_textgrid();
 
-    select_animate_time(s_TimeLayer.minutes, s_TimeLayer.hours, settings.textgrid_animation);
+    select_animate_time(s_TimeLayers.minutes, s_TimeLayers.hours, settings.textgrid_animation);
 }
 
 //LAYER CREATION
 //-----------------------------------------------------------------------------
 
-static void text_layer_set_style(TextLayer *text, GFont font, GColor text_color, GColor bg_color){
-        text_layer_set_font(text, font);
-        text_layer_set_text_color(text, text_color);
-        text_layer_set_background_color(text, bg_color);
-}
-
 static void update_textgrid_visibility(){
     int x_coord = 0;
     int y_coord = 0;
 
-    for(int i=0; i<_NUM_ELEM_; i++){
+    for(uint i=0; i<_NUM_ELEM_; i++){
         Layer *current_element_layer = text_layer_get_layer(s_textgrid_elements[i]);
         x_coord = layer_get_frame(current_element_layer).origin.x;
         y_coord = layer_get_frame(current_element_layer).origin.y;
@@ -143,11 +159,11 @@ static void update_textgrid_visibility(){
 }
 
 static void create_textgrid(Layer *target){
-    int x_coord = 0;
-    int y_coord = 0;
+    uint x_coord = 0;
+    uint y_coord = 0;
     s_textgrid_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FEATURE_MONO_REGULAR_20));
 
-    for(int i=0; i<_NUM_ELEM_; i++){
+    for(uint i=0; i<_NUM_ELEM_; i++){
         x_coord = 3 + (i % 10) * 14;
         if(i) y_coord = (i % 10)? y_coord : y_coord + 27;
 
@@ -204,29 +220,29 @@ static void create_time(Layer *target){
     layer_add_child(target, s_TimeLayer_bg);
     layer_mark_dirty(s_TimeLayer_bg);
 
-    if(!s_TimeLayer.hours){
-        s_TimeLayer.hours = text_layer_create(GRect(time_x, time_y, time_w, time_h));
-        s_TimeLayer.separator = text_layer_create(GRect(time_x + time_w, time_y, time_w_separator, time_h));
-        s_TimeLayer.minutes = text_layer_create(GRect(time_x + time_w + time_w_separator - 5, time_y, time_w, time_h));
+    if(!s_TimeLayers.hours){
+        s_TimeLayers.hours = text_layer_create(GRect(time_x, time_y, time_w, time_h));
+        s_TimeLayers.separator = text_layer_create(GRect(time_x + time_w, time_y, time_w_separator, time_h));
+        s_TimeLayers.minutes = text_layer_create(GRect(time_x + time_w + time_w_separator - 5, time_y, time_w, time_h));
 
-        text_layer_set_style(s_TimeLayer.hours, s_time_font, settings.time_color, GColorClear);
-        text_layer_set_style(s_TimeLayer.minutes, s_time_font, settings.time_color, GColorClear);
-        text_layer_set_style(s_TimeLayer.separator, s_time_font, settings.time_color, GColorClear);
-        text_layer_set_text(s_TimeLayer.separator, ":");
+        text_layer_set_style(s_TimeLayers.hours, s_time_font, settings.time_color, GColorClear);
+        text_layer_set_style(s_TimeLayers.minutes, s_time_font, settings.time_color, GColorClear);
+        text_layer_set_style(s_TimeLayers.separator, s_time_font, settings.time_color, GColorClear);
+        text_layer_set_text(s_TimeLayers.separator, ":");
 
-        layer_insert_above_sibling(text_layer_get_layer(s_TimeLayer.hours), s_TimeLayer_bg);
-        layer_insert_above_sibling(text_layer_get_layer(s_TimeLayer.minutes), s_TimeLayer_bg);
-        layer_insert_above_sibling(text_layer_get_layer(s_TimeLayer.separator), s_TimeLayer_bg);
+        layer_insert_above_sibling(text_layer_get_layer(s_TimeLayers.hours), s_TimeLayer_bg);
+        layer_insert_above_sibling(text_layer_get_layer(s_TimeLayers.minutes), s_TimeLayer_bg);
+        layer_insert_above_sibling(text_layer_get_layer(s_TimeLayers.separator), s_TimeLayer_bg);
     }
 
     else{
-        text_layer_set_text_color(s_TimeLayer.hours, settings.time_color);
-        text_layer_set_text_color(s_TimeLayer.minutes, settings.time_color);
-        text_layer_set_text_color(s_TimeLayer.separator, settings.time_color); 
+        text_layer_set_text_color(s_TimeLayers.hours, settings.time_color);
+        text_layer_set_text_color(s_TimeLayers.minutes, settings.time_color);
+        text_layer_set_text_color(s_TimeLayers.separator, settings.time_color); 
 
-        Layer *hours_layer = text_layer_get_layer(s_TimeLayer.hours);
-        Layer *separator_layer = text_layer_get_layer(s_TimeLayer.separator);
-        Layer *minutes_layer = text_layer_get_layer(s_TimeLayer.minutes);
+        Layer *hours_layer = text_layer_get_layer(s_TimeLayers.hours);
+        Layer *separator_layer = text_layer_get_layer(s_TimeLayers.separator);
+        Layer *minutes_layer = text_layer_get_layer(s_TimeLayers.minutes);
 
         layer_set_frame(hours_layer, GRect(time_x, time_y, time_w, time_h));
         layer_set_frame(separator_layer, GRect(time_x + time_w, time_y, time_w_separator, time_h));
@@ -264,7 +280,7 @@ static void load_settings(){
 }
 
 static void update_settings(){
-    for(int i = 0; i < _NUM_ELEM_; i++){
+    for(uint i = 0; i < _NUM_ELEM_; i++){
         text_layer_set_text_color(s_textgrid_elements[i], settings.textgrid_color);
     }
 
@@ -322,12 +338,12 @@ static void main_window_load(Window *window) {
 }
 
 static void main_window_unload(Window *window) {
-    for(int i=0; i<_NUM_ELEM_; i++) 
+    for(uint i=0; i<_NUM_ELEM_; i++) 
         text_layer_destroy(s_textgrid_elements[i]);
 
-    text_layer_destroy(s_TimeLayer.hours);
-    text_layer_destroy(s_TimeLayer.minutes);
-    text_layer_destroy(s_TimeLayer.separator);
+    text_layer_destroy(s_TimeLayers.hours);
+    text_layer_destroy(s_TimeLayers.minutes);
+    text_layer_destroy(s_TimeLayers.separator);
 
     layer_destroy(s_TimeLayer_bg);
 
