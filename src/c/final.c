@@ -136,7 +136,31 @@ static void update_textgrid_visibility(){
     if(settings.date){
         for(uint i = 50; i <_NUM_ELEM_; i++){
             layer_set_hidden(text_layer_get_layer(s_textgrid_elements[i]), true);
+            layer_mark_dirty(text_layer_get_layer(s_textgrid_elements[i]));
         }
+    }
+
+    else{
+         for(uint i = 50; i <_NUM_ELEM_; i++){
+            layer_set_hidden(text_layer_get_layer(s_textgrid_elements[i]), false);
+            layer_mark_dirty(text_layer_get_layer(s_textgrid_elements[i]));
+        }       
+    }
+}
+
+static void update_dategrid_visiblity(){
+    if(settings.date){
+        for(uint i = 0; i < 10; i++){
+            layer_set_hidden(text_layer_get_layer(s_dategrid_elements[i]), false);
+            layer_mark_dirty(text_layer_get_layer(s_dategrid_elements[i]));
+        }
+    }
+
+    else{
+         for(uint i = 0; i < 10; i++){
+            layer_set_hidden(text_layer_get_layer(s_dategrid_elements[i]), true);
+            layer_mark_dirty(text_layer_get_layer(s_dategrid_elements[i]));
+        }       
     }
 }
 
@@ -158,13 +182,6 @@ static void create_textgrid(Layer *target){
     shuffle_textgrid();
 }
 
-static void draw_timebox_canvas(Layer *layer, GContext *ctx){
-    graphics_context_set_stroke_color(ctx, settings.accent_color);
-    graphics_context_set_fill_color(ctx, settings.accent_color);    
-
-    GRect rect_bounds = layer_get_bounds(layer);
-    graphics_fill_rect(ctx, rect_bounds, 0, GCornerNone); 
-}
 
 static void select_time_box_coords(){
     switch(settings.time_box_position){
@@ -177,6 +194,14 @@ static void select_time_box_coords(){
         case RIGHT:
             s_time_box = GRect(31, 59, 112, 48);
     }
+}
+
+static void draw_timebox_canvas(Layer *layer, GContext *ctx){
+    graphics_context_set_stroke_color(ctx, settings.accent_color);
+    graphics_context_set_fill_color(ctx, settings.accent_color);    
+
+    GRect rect_bounds = layer_get_bounds(layer);
+    graphics_fill_rect(ctx, rect_bounds, 0, GCornerNone); 
 }
 
 static void create_time(Layer *target){
@@ -238,7 +263,7 @@ static void create_time(Layer *target){
 
 }
 
-static void create_date(Layer *target){
+static void create_dategrid(Layer *target){
     s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FEATURE_MONO_BOLD_20));
 
     uint x_coord = 0;
@@ -250,6 +275,8 @@ static void create_date(Layer *target){
         text_layer_set_style(s_dategrid_elements[i], s_date_font, settings.textgrid_color, GColorClear);
         layer_add_child(target, text_layer_get_layer(s_dategrid_elements[i])); 
     }   
+
+    update_dategrid_visiblity();
 }
 
 //CONFIGDATA
@@ -282,6 +309,7 @@ static void update_settings(){
 
     create_time(window_get_root_layer(s_window));
     update_textgrid_visibility();
+    update_dategrid_visiblity();
 }
 
 static void config_data_received_handler(DictionaryIterator *iter, void *context) {
@@ -335,7 +363,7 @@ static void main_window_load(Window *window) {
 
     create_textgrid(window_layer);
     create_time(window_layer);
-    create_date(window_layer);
+    create_dategrid(window_layer);
 }
 
 static void main_window_unload(Window *window) {
