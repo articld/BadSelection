@@ -34,6 +34,7 @@ enum TimeBoxPosition{
 typedef struct{
     GColor bg_color, accent_color, time_color, textgrid_color;
     bool textgrid_animation;
+    bool date;
     enum TimeBoxPosition time_box_position;
 } ClaySettings;
 static ClaySettings settings;
@@ -44,12 +45,13 @@ typedef struct{
 } TL;
 
 static TL s_TimeLayers;
+static TextLayer *s_dategrid_elements[10];
+
 static Layer *s_TimeLayer_bg;
 static TextLayer *s_textgrid_elements[_NUM_ELEM_];
 
 static GFont s_time_font, s_textgrid_font;
-//static GFont s_date_font;
-
+static GFont s_date_font;
 
 static GRect s_time_box;
 
@@ -90,46 +92,20 @@ static void update_time(){
     text_layer_set_text(s_TimeLayers.minutes, s_m_buffer);
 }
 
-/* 
-
-    !!!!!!! WARNING !!!!!!!!!!
-    RICORDATI DI INIZIALIZZARE LE VARIABILI
-
 static void update_date(){
-    //TODO: settings key for killing last row of textgrid
-    //Animate indipendently the date from the rest of the grid
-    //Put text accordingly
-
     time_t temp = time(NULL);
     struct tm *tick_time = localtime(&temp);
+    char s_date[11];
+    static char s_str[11][2] = {{'a','\0'}};
 
-    s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FEATURE_MONO_BOLD_20));
+    strftime(s_date, sizeof(s_date), "%d/%m/%Y", tick_time);
 
-    static char s_mday[3];
-    static char s_month[3];
-    static char s_year[5];
-
-    strftime(s_mday, sizeof(s_mday), "%d", tick_time);
-    strftime(s_month, sizeof(s_month), "%m", tick_time);
-    strftime(s_year, sizeof(s_year), "%Y", tick_time);
-
-    uint x_coord = 0;
-    uint y_coord = 0;
-
-    for(uint i=0; i < sizeof(s_dategrid_elements); i++){
-        x_coord = 3 + i * 14;
-        y_coord = 135;
-
-        s_dategrid_elements[i] = text_layer_create(GRect(x_coord, y_coord, 13, 25));
-        text_layer_set_style(s_dategrid_elements[i], s_textgrid_font, settings.textgrid_color, GColorClear);
-        layer_add_child(window_get_root_layer(s_window), text_layer_get_layer(s_dategrid_elements[i])); 
-    }    
-
+    for(uint i = 0; i < 10; i++){
+        s_str[i][0] = s_date[i];
+        text_layer_set_text(s_dategrid_elements[i],s_str[i]);
+    }
 }
    
-
-*/
-
 static void tick_minute_handler(struct tm *tick_time, TimeUnits units_changed){
     if(settings.textgrid_animation)
         animate_grid(s_textgrid_elements);
@@ -155,6 +131,12 @@ static void update_textgrid_visibility(){
             layer_set_hidden(text_layer_get_layer(s_textgrid_elements[i]), true);
 
         layer_mark_dirty(text_layer_get_layer(s_textgrid_elements[i]));
+    }
+
+    if(settings.date){
+        for(uint i = 50; i <_NUM_ELEM_; i++){
+            layer_set_hidden(text_layer_get_layer(s_textgrid_elements[i]), true);
+        }
     }
 }
 
@@ -256,6 +238,20 @@ static void create_time(Layer *target){
 
 }
 
+static void create_date(Layer *target){
+    s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FEATURE_MONO_BOLD_20));
+
+    uint x_coord = 0;
+    uint y_coord = 135;
+
+    for(uint i=0; i < 10; i++){
+        x_coord = 3 + i * 14;
+        s_dategrid_elements[i] = text_layer_create(GRect(x_coord, y_coord, 13, 25));
+        text_layer_set_style(s_dategrid_elements[i], s_date_font, settings.textgrid_color, GColorClear);
+        layer_add_child(target, text_layer_get_layer(s_dategrid_elements[i])); 
+    }   
+}
+
 //CONFIGDATA
 //-----------------------------------------------------------------------------
 
@@ -265,7 +261,7 @@ static void default_settings(){
     settings.accent_color = _ACCENT_BG_COLOR_;
     settings.time_color = _TIME_COLOR_; 
     settings.textgrid_color = _TEXTGRID_COLOR_; 
-
+    settings.date = true;
     settings.textgrid_animation = true;
     settings.time_box_position = LEFT;
 }
@@ -321,6 +317,11 @@ static void config_data_received_handler(DictionaryIterator *iter, void *context
         settings.time_box_position = time_box_position_t->value->int32 - 48;
     }
 
+    Tuple *date_t = dict_find(iter, MESSAGE_KEY_Date);
+    if(date_t){
+        settings.date = date_t->value->int32 == 1;
+    }
+
     save_settings();
     update_settings();
 }
@@ -334,12 +335,15 @@ static void main_window_load(Window *window) {
 
     create_textgrid(window_layer);
     create_time(window_layer);
-
+    create_date(window_layer);
 }
 
 static void main_window_unload(Window *window) {
     for(uint i=0; i<_NUM_ELEM_; i++) 
         text_layer_destroy(s_textgrid_elements[i]);
+
+    for(uint i=0; i<10; i++)
+        text_layer_destroy(s_dategrid_elements[i]);
 
     text_layer_destroy(s_TimeLayers.hours);
     text_layer_destroy(s_TimeLayers.minutes);
@@ -349,7 +353,7 @@ static void main_window_unload(Window *window) {
 
     fonts_unload_custom_font(s_time_font);
     fonts_unload_custom_font(s_textgrid_font);
-    //fonts_unload_custom_font(s_date_font);
+    fonts_unload_custom_font(s_date_font);
 }
 
 static void init(void) {
@@ -371,7 +375,7 @@ static void init(void) {
     app_message_open(128,128);
 
     update_time();
-    //update_date();
+    update_date();
 }
 
 static void deinit(void) {

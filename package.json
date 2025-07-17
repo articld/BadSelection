@@ -31,7 +31,8 @@
       "TimeColor",
       "TextGridColor",
       "TextGridAnimation",
-      "TimeBoxPosition"
+      "TimeBoxPosition",
+      "Date"
     ],
     "resources": {
       "media": [
@@ -45,7 +46,7 @@
           "type": "font",
           "name": "FONT_FEATURE_MONO_BOLD_20",
           "file": "fonts/featuremono-bold.ttf",
-          "characterRegex": "[0-9/]"
+          "characterRegex": "[/0-9]"
         },
         {
           "type": "font",

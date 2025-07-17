@@ -93,6 +93,23 @@ module.exports = [
   },
 
   {
+    "type":"section",
+    "items":[
+      {
+        "type":"heading",
+        "defaultValue":"Date Settings"
+      },
+
+      {
+        "type":"toggle",
+        "messageKey":"Date",
+        "label":"Show/Hide the current date",
+        "defaultValue":true
+      }
+    ]
+  },
+
+  {
     "type": "submit",
     "defaultValue": "Save Settings"
   }
