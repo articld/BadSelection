@@ -1,3 +1,6 @@
+//TODO: use globals instead
+//TODO: fix date.
+
 #include <pebble.h>
 #include "animations.h"
 
@@ -46,6 +49,7 @@ typedef struct{
 
 static TL s_TimeLayers;
 static TextLayer *s_dategrid_elements[10];
+static char s_current_date[11];
 
 static Layer *s_TimeLayer_bg;
 static TextLayer *s_textgrid_elements[_NUM_ELEM_];
@@ -95,22 +99,33 @@ static void update_time(){
 static void update_date(){
     time_t temp = time(NULL);
     struct tm *tick_time = localtime(&temp);
-    char s_date[11];
     static char s_str[11][2] = {{'a','\0'}};
 
-    strftime(s_date, sizeof(s_date), "%d/%m/%Y", tick_time);
+    strftime(s_current_date, sizeof(s_current_date), "%d/%m/%Y", tick_time);
 
     for(uint i = 0; i < 10; i++){
-        s_str[i][0] = s_date[i];
+        s_str[i][0] = s_current_date[i];
         text_layer_set_text(s_dategrid_elements[i],s_str[i]);
     }
 }
    
 static void tick_minute_handler(struct tm *tick_time, TimeUnits units_changed){
-    if(settings.textgrid_animation)
+    if(settings.textgrid_animation){
         animate_grid(s_textgrid_elements);
-    else
+
+        time_t temp = time(NULL);
+        struct tm *tick_time = localtime(&temp);
+        char date_to_test[11];
+        strftime(date_to_test, sizeof(date_to_test), "%d/%m/%Y", tick_time);
+
+        if(!strcmp(s_current_date, date_to_test)){
+            animate_date(s_dategrid_elements);
+        }
+    }
+    else{
         shuffle_textgrid();
+        update_date();
+    }
 
     select_animate_time(s_TimeLayers.minutes, s_TimeLayers.hours, settings.textgrid_animation);
 }

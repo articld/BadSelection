@@ -2,9 +2,12 @@
 #include "animations.h"
 
 //this is not good, but I'll fix it later
+//TODO: fix this by, oh I don't know, passing this number as an argument?
+//Why didn't I think of that sooner?
 #define _NUM_ELEM_ 60
 
 int s_animation_counter = 0;
+int date_animation_counter = 0;
 
 TextLayer *time_hours_pointer = NULL;
 
@@ -171,5 +174,73 @@ void animate_time(TextLayer *target, int additional_delay, bool is_textgrid_anim
 
     Animation *spawn = animation_spawn_create_from_array(arr, 2);
     animation_schedule(spawn);
+    free(arr);
+}
+
+void date_anim_started_handler(Animation *animation, void *context){
+    return;
+}
+
+void date_anim_stopped_handler(Animation *animation, bool finished, void *context){
+    return;
+}
+
+void date_anim_1_started_handler(Animation *animation, void *context) {
+    return;
+}
+
+void date_anim_1_stopped_handler(Animation *animation, bool finished, void *context) {
+    return;
+}
+
+void animate_date(TextLayer **s_date_elements_to_anim){
+    const int array_length = 10 * 2;
+    Animation **arr = (Animation**)malloc(array_length * sizeof(Animation*));
+
+    const int duration_ms = 300;
+    int delay_ms = 3750;
+
+    for(int i=0; i< array_length; i++){
+        if(i % 2 == 0){
+            int j = i / 2;
+            GRect start = layer_get_frame(text_layer_get_layer(s_date_elements_to_anim[j])); 
+            GRect finish = layer_get_frame(text_layer_get_layer(s_date_elements_to_anim[j]));
+            finish.origin.y = finish.origin.y + finish.size.h;
+            finish.size.h = 0;
+
+            PropertyAnimation *prop_anim = property_animation_create_layer_frame(text_layer_get_layer(s_date_elements_to_anim[j]), &start, &finish);
+            Animation *anim = property_animation_get_animation(prop_anim);
+            if(!layer_get_hidden(text_layer_get_layer(s_date_elements_to_anim[j])))
+                delay_ms += 75;
+
+            animation_set_curve(anim, AnimationCurveEaseIn);
+            animation_set_delay(anim, delay_ms);
+            animation_set_duration(anim, duration_ms);
+
+            animation_set_handlers(anim, (AnimationHandlers){
+                .started = anim_started_handler,
+                .stopped = anim_stopped_handler
+            }, s_date_elements_to_anim[j]);
+
+            arr[i] = anim;
+        }
+
+        else{
+            int j = i - 1;
+            Animation *anim_1 = animation_clone(arr[j]);
+            animation_set_reverse(anim_1, true);
+            animation_set_delay(anim_1, delay_ms + duration_ms + 120);
+            animation_set_handlers(anim_1, (AnimationHandlers){
+                .started = anim_1_started_handler,
+                .stopped = anim_1_stopped_handler
+            }, NULL);
+
+            arr[i] = anim_1;
+        }
+    }
+
+    Animation *spawn = animation_spawn_create_from_array(arr , array_length);
+    animation_schedule(spawn);
+
     free(arr);
 }
